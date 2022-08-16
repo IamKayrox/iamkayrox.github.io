@@ -1,5 +1,5 @@
-<div class="window-top-bar">
-    <div class="button-container">
+<div class="window-top-bar" (mousedown)="onMouseDown()" [ngClass]="{ 'moving-window': moving }">
+    <div *ngIf="!noButtons"  class="button-container">
         <div class="window-button close"></div>
         <div class="window-button minimise"></div>
     </div>
