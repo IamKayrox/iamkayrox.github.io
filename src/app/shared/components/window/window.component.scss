@@ -1,0 +1,46 @@
+:host {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 4px solid #ccc;
+    border-radius: 12px;
+    box-shadow: 12px 12px #3333;
+    overflow: hidden;
+    background-color: #f9f4fd;
+}
+
+.window-top-bar {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 32px;
+    background-color: #eeccff;
+    border-bottom: 3px solid #ccc;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    .button-container {
+        position: absolute;
+        left: 12px;
+        display: flex;
+        .window-button {
+            width: 24px;
+            height: 24px;
+            border-radius: 16px;
+            border: 4px solid #ccc;
+            box-sizing: border-box;
+            margin-right: 4px;
+            &.close {
+                background-color: #ffbbcc;
+            }
+            &.minimise {
+                background-color: #ffffee;
+            }
+        }
+    }
+}
+
+.window-content {
+    width: 100%;
+    height: calc(100% - 32px);
+}
