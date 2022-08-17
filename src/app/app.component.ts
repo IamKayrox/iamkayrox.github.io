@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import { WipNoticeComponent } from './components/wip-notice/wip-notice.component';
+import { AppDefinition } from './shared/models/app-definition.model';
 
 @Component({
   selector: 'app-root',
@@ -6,5 +8,10 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'demo';
+  wipApp: AppDefinition<WipNoticeComponent> = {
+    name: 'app_wip_notice',
+    title: 'Demo WIP Notice',
+    component: WipNoticeComponent,
+    singleInstance: true,
+  }
 }

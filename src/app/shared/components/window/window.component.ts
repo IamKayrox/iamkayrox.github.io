@@ -1,80 +1,34 @@
-import { Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnChanges, OnDestroy, OnInit, Output } from '@angular/core';
+import { Component, ComponentRef, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChange, SimpleChanges, Type, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { ContainerViewDirective } from '../../directives/container-view.directive';
+import { AppDefinition } from '../../models/app-definition.model';
 import { CustomChanges } from '../../models/customChanges.model';
 import { Rect } from '../../models/rect.model';
 import { Sides } from '../../models/sides.enum';
 import { Vector2D } from '../../models/vector2d.model';
+import { DesktopService } from '../../services/desktop.service';
 import { PointerService } from '../../services/pointer.service';
-import { WindowData } from './window.data';
 
 @Component({
   selector: 'app-window',
   templateUrl: './window.component.html',
   styleUrls: ['./window.component.scss']
 })
-export class WindowComponent implements OnInit, OnDestroy, OnChanges, WindowData {
-  @Input('title') title?: string;
-  @Input() noButtons = false;
+export class WindowComponent implements OnInit, OnDestroy, OnChanges {
+  @Input('title') title: string = 'Untitled window';
+  @Input('name') name?: string;
   @Input() allowResize = true;
+  @Input() initialSize?: Vector2D;
   @Input() initialAsMinimun = false;
-  @Input() minimumWidth?: number;
-  @Input() minimumHeight?: number;
+  @Input() minimunSize?: Vector2D;
   @Input() canClose = true;
   @Input() canMinimize = true;
 
   @Output() close = new EventEmitter<void>();
   @Output() minimize = new EventEmitter<void>();
-  @Output() minimumWidthChange = new EventEmitter<number | undefined>();
-  @Output() minumumHeightChange = new EventEmitter<number | undefined>();
-  
-  @HostBinding('style.left.px') get left() { return this.window_rect.x }
-  @HostBinding('style.top.px') get top() { return this.window_rect.y }
-  @HostBinding('style.width.px') get width() { return this.window_rect.w }
-  @HostBinding('style.height.px') get height() { return this.window_rect.h }
-  @HostBinding('style.cursor') get cursor() {
-    if(this.mouse_inside && this.allowResize) {
-      const pointer = this.pointerService.snapshot;
-      const rPointer = pointer.position.relativeTo(this.window_rect.topLeftCorner);
-      if(rPointer.x <= 12) {
-        if(rPointer.y <= 12) {
-          this.resizable = Sides.top + Sides.left;
-          return 'nwse-resize';
-        }
-        else if(rPointer.y >= this.window_rect.h - 12) {
-          this.resizable = Sides.bottom + Sides.left;
-          return 'nesw-resize';
-        }
-        else if(rPointer.x <= 4) {
-          this.resizable = Sides.left;
-          return 'ew-resize';
-        }
-      }
-      else if(rPointer.x >= this.window_rect.w - 12) {
-        if(rPointer.y <= 12) {
-          this.resizable = Sides.top + Sides.right;
-          return 'nesw-resize';
-        }
-        else if(rPointer.y >= this.window_rect.h - 12) {
-          this.resizable = Sides.bottom + Sides.right;
-          return 'nwse-resize';
-        }
-        else if(rPointer.x >= this.window_rect.w - 4) {
-          this.resizable = Sides.right;
-          return 'ew-resize';
-        }
-      }
-      else if(rPointer.y <= 4) {
-        this.resizable = Sides.top;
-        return 'ns-resize';
-      }
-      else if( rPointer.y >= this.window_rect.h - 4) {
-        this.resizable = Sides.bottom;
-        return 'ns-resize';
-      }
-    }
-    this.resizable = 0;
-    return 'inherit';
-  }
+  @Output('window-id') id: string = '##__detached__window__##';
+
+  @ViewChild(ContainerViewDirective, { static: true }) containerView!: ContainerViewDirective;
 
   moving?: boolean;
 
@@ -83,74 +37,50 @@ export class WindowComponent implements OnInit, OnDestroy, OnChanges, WindowData
   private resizable = 0; //top = 1 | left = 2 | bottom = 4 | right = 8
   private resizing = 0;
 
-  private minimunSize?: Vector2D;
-
   private mouse_delta_move_subs?: Subscription;
   private mouse_button0_move_subs?: Subscription;
   private mouse_delta_resize_subs?: Subscription;
   private mouse_button0_resize_subs?: Subscription;
 
+  private app?: ComponentRef<any>;
+  private desktopID: string = '##__unhandled__window__##';
+  private flashing: boolean = false;
+
+  private flashTimeout?: number;
+
+  set flash(val: boolean) {
+    if(val) {
+      this.flashTimeout = window.setTimeout(() => { this.flashing = false }, 600);
+    }
+    this.flashing = val;
+  }
+
+  get flash() {
+    return this.flashing;
+  }
+
   constructor(
-    private elRef: ElementRef<HTMLElement>,
     private pointerService: PointerService,
+    private desktopService: DesktopService,
   ) { }
 
   ngOnInit() {
-    if(this.elRef.nativeElement) {
-      const cStyle = window.getComputedStyle(this.elRef.nativeElement);
-      this.window_rect.x = Number.parseInt(cStyle.left);
-      this.window_rect.y = Number.parseInt(cStyle.top);
-      this.window_rect.w = Number.parseInt(cStyle.width);
-      this.window_rect.h = Number.parseInt(cStyle.height);
-      if(this.initialAsMinimun) {
-        this.minimunSize = new Vector2D(this.window_rect.w, this.window_rect.h);
-      }
-    }
-    if(this.minimumWidth || this.minimumHeight) {
-      this.minimunSize = new Vector2D(this.minimumWidth || 0, this.minimumHeight || 0);
-      this.window_rect.w = Math.max(this.window_rect.w, this.minimunSize.w);
-      this.window_rect.h = Math.max(this.window_rect.h, this.minimunSize.h);
-    }
+    this.window_rect.w = Math.max(this.initialSize?.w || 640, this.minimunSize?.w || 0);
+    this.window_rect.h = Math.max(this.initialSize?.h || 480, this.minimunSize?.h || 0);
   }
 
-  ngOnChanges(changes: CustomChanges<WindowData>): void {
-    if(changes.minimumWidth) {
-      if(changes.minimumWidth.currentValue > 0) {
-        if(!this.minimunSize)
-          this.minimunSize = new Vector2D(changes.minimumWidth.currentValue);
-        else
-          this.minimunSize.w = changes.minimumWidth.currentValue;
-        this.window_rect.w = Math.max(this.minimunSize.w, this.window_rect.w);
-      }
-      else if(this.minimunSize) {
-        if(!this.minimunSize.h)
-          delete this.minimunSize;
-        else
-          this.minimunSize.w = 0;
-          
-      }
-    }
-    if(changes.minimumHeight) {
-      if(changes.minimumHeight.currentValue > 0) {
-        if(!this.minimunSize)
-          this.minimunSize = new Vector2D(0, changes.minimumHeight.currentValue);
-        else
-          this.minimunSize.h = changes.minimumHeight.currentValue;
-        this.window_rect.h = Math.max(this.minimunSize.h, this.window_rect.h);
-      }
-      else if(this.minimunSize) {
-        if(!this.minimunSize.w)
-          delete this.minimunSize;
-        else
-          this.minimunSize.h = 0;
-      }
-    }
+  ngOnChanges(changes: SimpleChanges): void {
   }
 
   ngOnDestroy(): void {
     console.log('Performed a clean destruction');
     this.terminateMoveSubscriptions();
     this.terminateResizeSubscriptions();
+  }
+
+  doClose() {
+    this.close.emit();
+    this.desktopService.terminateApp(this.id, this.desktopID);
   }
 
   onMouseDown($event: MouseEvent) {
@@ -242,5 +172,61 @@ export class WindowComponent implements OnInit, OnDestroy, OnChanges, WindowData
         this.terminateResizeSubscriptions();
       }
     }
+  }
+
+  initializeApp<T>(appDefinition: AppDefinition<T>, desktopID: string) {
+    this.app = this.containerView.viewContainerRef.createComponent(appDefinition.component);
+    this.title = appDefinition.title;
+    this.name = appDefinition.name;
+    this.desktopID = desktopID;
+  }
+  
+  @HostBinding('style.left.px') get left() { return this.window_rect.x }
+  @HostBinding('style.top.px') get top() { return this.window_rect.y }
+  @HostBinding('style.width.px') get width() { return this.window_rect.w }
+  @HostBinding('style.height.px') get height() { return this.window_rect.h }
+  @HostBinding('style.cursor') get cursor() {
+    if(this.mouse_inside && this.allowResize) {
+      const pointer = this.pointerService.snapshot;
+      const rPointer = pointer.position.relativeTo(this.window_rect.topLeftCorner);
+      if(rPointer.x <= 12) {
+        if(rPointer.y <= 12) {
+          this.resizable = Sides.top + Sides.left;
+          return 'nwse-resize';
+        }
+        else if(rPointer.y >= this.window_rect.h - 12) {
+          this.resizable = Sides.bottom + Sides.left;
+          return 'nesw-resize';
+        }
+        else if(rPointer.x <= 4) {
+          this.resizable = Sides.left;
+          return 'ew-resize';
+        }
+      }
+      else if(rPointer.x >= this.window_rect.w - 12) {
+        if(rPointer.y <= 12) {
+          this.resizable = Sides.top + Sides.right;
+          return 'nesw-resize';
+        }
+        else if(rPointer.y >= this.window_rect.h - 12) {
+          this.resizable = Sides.bottom + Sides.right;
+          return 'nwse-resize';
+        }
+        else if(rPointer.x >= this.window_rect.w - 4) {
+          this.resizable = Sides.right;
+          return 'ew-resize';
+        }
+      }
+      else if(rPointer.y <= 4) {
+        this.resizable = Sides.top;
+        return 'ns-resize';
+      }
+      else if( rPointer.y >= this.window_rect.h - 4) {
+        this.resizable = Sides.bottom;
+        return 'ns-resize';
+      }
+    }
+    this.resizable = 0;
+    return 'inherit';
   }
 }

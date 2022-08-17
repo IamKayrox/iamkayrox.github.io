@@ -8,6 +8,16 @@
     box-shadow: 12px 12px #3333;
     overflow: hidden;
     background-color: #f9f4fd;
+    pointer-events: all;
+}
+
+@keyframes flashWindow {
+    0% {
+        filter: saturate(100%);
+    }
+    50% {
+        filter: saturate(200%);
+    }
 }
 
 .window-top-bar {
@@ -22,6 +32,9 @@
     box-sizing: border-box;
     cursor: grab;
     user-select: none;
+    &.flash {
+        animation: flashWindow 200ms infinite;
+    }
     &.moving-window {
         cursor: grabbing;
     }

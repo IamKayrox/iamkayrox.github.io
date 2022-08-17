@@ -1,6 +1,6 @@
-<div class="window-top-bar" (mousedown)="onMouseDown($event)" [ngClass]="{ 'moving-window': moving }">
-    <div *ngIf="!noButtons"  class="button-container">
-        <div class="window-button close" *ngIf="canClose" (click)="close.emit()" (mousedown)="$event.stopPropagation()"></div>
+<div class="window-top-bar" (mousedown)="onMouseDown($event)" [ngClass]="{ 'moving-window': moving, 'flash': flash }">
+    <div class="button-container">
+        <div class="window-button close" *ngIf="canClose" (click)="doClose()" (mousedown)="$event.stopPropagation()"></div>
         <div class="window-button minimise" *ngIf="canMinimize" (mousedown)="$event.stopPropagation()"></div>
     </div>
     <div class="title-container">
@@ -9,5 +9,5 @@
     <div class="dummy-thicc"></div>
 </div>
 <div class="window-content">
-    <ng-content></ng-content>
+    <ng-template appWindowView></ng-template>
 </div>
