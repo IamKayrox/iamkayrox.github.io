@@ -10,6 +10,8 @@ export class PointerService implements OnDestroy {
     private mouse_delta_subject = new Subject<Vector2D>();
     private button0_state: boolean = false;
     private button0_state_subject = new Subject<boolean>();
+    private button1_state: boolean = false;
+    private button1_state_subject = new Subject<boolean>();
 
     private abortController = new AbortController();
 
@@ -35,7 +37,12 @@ export class PointerService implements OnDestroy {
     private onMouseDown(ev: MouseEvent) {
         switch(ev.button) {
             case 0:
-                this.button0_state_subject.next(true);
+                this.button0_state = true;
+                this.button0_state_subject.next(this.button0_state);
+                break;
+            case 1:
+                this.button1_state = true;
+                this.button1_state_subject.next(this.button1_state);
                 break;
         }
     }
@@ -43,7 +50,12 @@ export class PointerService implements OnDestroy {
     private onMouseUp(ev: MouseEvent) {
         switch(ev.button) {
             case 0:
-                this.button0_state_subject.next(false);
+                this.button0_state = false;
+                this.button0_state_subject.next(this.button0_state);
+                break;
+            case 1:
+                this.button1_state = false;
+                this.button1_state_subject.next(this.button1_state);
                 break;
         }
     }
@@ -60,11 +72,16 @@ export class PointerService implements OnDestroy {
         return this.button0_state_subject.asObservable();
     }
 
+    get button1() {
+        return this.button1_state_subject.asObservable();
+    }
+
     get snapshot() {
         return {
             position: new Vector2D(this.mouse_pos.x, this.mouse_pos.y),
             delta: new Vector2D(this.mouse_delta.x, this.mouse_delta.y),
-            button0: this.button0,
+            button0: this.button0_state,
+            button1: this.button1_state,
         }
     }
 }

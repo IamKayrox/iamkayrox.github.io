@@ -1,7 +1,7 @@
-<div class="window-top-bar" (mousedown)="onMouseDown()" [ngClass]="{ 'moving-window': moving }">
+<div class="window-top-bar" (mousedown)="onMouseDown($event)" [ngClass]="{ 'moving-window': moving }">
     <div *ngIf="!noButtons"  class="button-container">
-        <div class="window-button close"></div>
-        <div class="window-button minimise"></div>
+        <div class="window-button close" *ngIf="canClose" (click)="close.emit()" (mousedown)="$event.stopPropagation()"></div>
+        <div class="window-button minimise" *ngIf="canMinimize" (mousedown)="$event.stopPropagation()"></div>
     </div>
     <div class="title-container">
         {{title || 'Untitled window'}}

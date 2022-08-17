@@ -12,3 +12,21 @@
         z-index: 1;
     }
 }
+
+.test-window-defaults {
+    left: 200px;
+    top: 100px;
+    width: 500px;
+    height: 500px;
+}
+
+.test-window-content {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-flow: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
