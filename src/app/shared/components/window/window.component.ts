@@ -1,20 +1,23 @@
-import { Component, ComponentRef, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChange, SimpleChanges, Type, ViewChild } from '@angular/core';
+import { Component, ComponentRef, ElementRef, EventEmitter, HostBinding, HostListener, Inject, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChange, SimpleChanges, Type, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { ContainerViewDirective } from '../../directives/container-view.directive';
 import { AppDefinition } from '../../models/app-definition.model';
 import { CustomChanges } from '../../models/customChanges.model';
 import { Rect } from '../../models/rect.model';
 import { Sides } from '../../models/sides.enum';
+import { __WINDOW__HANDLE__ } from '../../models/symbols';
 import { Vector2D } from '../../models/vector2d.model';
 import { DesktopService } from '../../services/desktop.service';
 import { PointerService } from '../../services/pointer.service';
+import { AppIconService } from '../app-icon/app-icon.service';
+import { AppNotDefinedComponent } from '../app-not-defined/app-not-defined.component';
 
 @Component({
   selector: 'app-window',
   templateUrl: './window.component.html',
   styleUrls: ['./window.component.scss']
 })
-export class WindowComponent implements OnInit, OnDestroy, OnChanges {
+export class WindowComponent implements OnInit, OnDestroy {
   @Input('title') title: string = 'Untitled window';
   @Input('name') name?: string;
   @Input() allowResize = true;
@@ -43,7 +46,6 @@ export class WindowComponent implements OnInit, OnDestroy, OnChanges {
   private mouse_button0_resize_subs?: Subscription;
 
   private app?: ComponentRef<any>;
-  private desktopID: string = '##__unhandled__window__##';
   private flashing: boolean = false;
 
   private flashTimeout?: number;
@@ -60,16 +62,22 @@ export class WindowComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   constructor(
-    private pointerService: PointerService,
     private desktopService: DesktopService,
+    private pointerService: PointerService,
+    private appIconService: AppIconService,
+    @Inject(__WINDOW__HANDLE__) private handle: symbol,
   ) { }
 
   ngOnInit() {
     this.window_rect.w = Math.max(this.initialSize?.w || 640, this.minimunSize?.w || 0);
     this.window_rect.h = Math.max(this.initialSize?.h || 480, this.minimunSize?.h || 0);
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
+    const component = this.appIconService?.getComponent();
+    if(component) {
+      this.containerView.viewContainerRef.createComponent(component);
+    }
+    else {
+      this.containerView.viewContainerRef.createComponent(AppNotDefinedComponent)
+    }
   }
 
   ngOnDestroy(): void {
@@ -79,8 +87,8 @@ export class WindowComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   doClose() {
+    this.desktopService.closeWindow(this.handle);
     this.close.emit();
-    this.desktopService.terminateApp(this.id, this.desktopID);
   }
 
   onMouseDown($event: MouseEvent) {
@@ -172,13 +180,6 @@ export class WindowComponent implements OnInit, OnDestroy, OnChanges {
         this.terminateResizeSubscriptions();
       }
     }
-  }
-
-  initializeApp<T>(appDefinition: AppDefinition<T>, desktopID: string) {
-    this.app = this.containerView.viewContainerRef.createComponent(appDefinition.component);
-    this.title = appDefinition.title;
-    this.name = appDefinition.name;
-    this.desktopID = desktopID;
   }
   
   @HostBinding('style.left.px') get left() { return this.window_rect.x }

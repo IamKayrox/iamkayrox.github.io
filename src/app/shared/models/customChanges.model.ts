@@ -1,5 +1,15 @@
-import { SimpleChange } from "@angular/core"
+import { SimpleChange, SimpleChanges } from "@angular/core"
 
 export type CustomChanges<T> = {
-    [k in keyof T]?: SimpleChange;
+    [P in keyof T]?: CustomChage<T[P]>;
+}
+
+export class CustomChage<T> extends SimpleChange {
+    constructor(
+        public override previousValue: T,
+        public override currentValue: T, 
+        firstChange: boolean,
+    ) {
+        super(previousValue, currentValue, firstChange)
+    }
 }

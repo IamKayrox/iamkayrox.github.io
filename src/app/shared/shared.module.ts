@@ -3,9 +3,11 @@ import { NgModule } from "@angular/core";
 import { ContainerViewDirective } from "./directives/container-view.directive";
 import { DesktopComponent } from "./components/desktop/desktop.component";
 import { WindowComponent } from "./components/window/window.component";
-import { DesktopService } from "./services/desktop.service";
 import { PointerService } from "./services/pointer.service";
 import { IconContainerComponent } from "./components/icon-container/icon-container.component";
+import { AppIconComponent } from "./components/app-icon/app-icon.component";
+import { AppIconViewContainerDirective } from "./components/app-icon/app-icon-view-container.directive";
+import { AppNotDefinedComponent } from "./components/app-not-defined/app-not-defined.component";
 
 @NgModule({
     imports: [
@@ -16,14 +18,17 @@ import { IconContainerComponent } from "./components/icon-container/icon-contain
         DesktopComponent,
         ContainerViewDirective,
         IconContainerComponent,
+        AppIconComponent,
+        AppIconViewContainerDirective,
+        AppNotDefinedComponent,
     ],
     exports: [
         DesktopComponent,
         IconContainerComponent,
+        AppIconComponent,
     ],
     providers: [
         PointerService,
-        DesktopService,
     ]
 })
 export class SharedModule {}

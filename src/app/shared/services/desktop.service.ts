@@ -1,38 +1,52 @@
-import { Injectable, Type } from '@angular/core';
-import { DesktopComponent } from '../components/desktop/desktop.component';
-import * as uuid from 'uuid';
+import { ComponentRef, Injectable, Injector, ViewContainerRef } from '@angular/core';
+import { WindowComponent } from '../components/window/window.component';
+import { __WINDOW__HANDLE__ } from '../models/symbols';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable()
 export class DesktopService {
-  private desktops: { [k: string]: DesktopComponent } = {}
+  private apps: { [k: symbol]: Injector } = {};
+  private instances: { [k: symbol]: ComponentRef<WindowComponent> } = { }
+
+  private desktopView?: ViewContainerRef;
 
   constructor() { }
 
-  getDesktop(id: string): DesktopComponent | undefined {
-    return this.desktops[id];
+  initializeService(desktopView: ViewContainerRef) {
+    this.desktopView = desktopView;
   }
 
-  registerDesktop(component: DesktopComponent) {
-    const id = uuid.v4();
-    this.desktops[id] = component;
-    return id;
+  registerApp(injector: Injector) {
+    const appHandle = Symbol();
+    this.apps[appHandle] = injector;
+    return appHandle;
   }
 
-  unregisterDesktop(id: string) {
-    if(this.desktops[id]) {
-      delete this.desktops[id];
+  getAppService(appHandle: symbol) {
+    return this.apps[appHandle];
+  }
+
+  openWindow(appHandle: symbol) {
+    if(this.desktopView && this.apps[appHandle]) {
+      const windowHandle = Symbol();
+      const instance = this.desktopView.createComponent(WindowComponent, {
+        injector: Injector.create({
+          providers: [
+            {
+              provide: __WINDOW__HANDLE__,
+              useValue: windowHandle,
+            }
+          ],
+          parent: this.apps[appHandle],
+        })
+      })
+      this.instances[windowHandle] = instance;
     }
   }
 
-  createApp<T>(id: string, componentType: Type<T>) {
-    
-  }
-
-  terminateApp(windowID: string, desktopID: string) {
-    if(this.desktops[desktopID]) {
-      this.desktops[desktopID].closeWindow(windowID);
+  closeWindow(handle: symbol) {
+    if(this.instances[handle]) {
+      this.instances[handle].destroy();
+      delete this.instances[handle]
     }
   }
 }

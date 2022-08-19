@@ -1,0 +1,1 @@
+export const __WINDOW__HANDLE__ = Symbol('__WINDOW__HANDLE__');
