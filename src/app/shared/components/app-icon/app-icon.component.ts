@@ -1,65 +1,53 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Injector, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, Type, ViewChild } from '@angular/core';
-import { CustomChanges } from '../../models/customChanges.model';
+import { Component, ElementRef, HostBinding, HostListener, Input, OnDestroy, OnInit, Optional, ViewChild } from '@angular/core';
+import { AppRegistryService } from '../../modules/app-registry/app-registry.service';
+import { AppDescriptor } from '../../modules/app-registry/models/app-descriptor.model';
 import { DesktopService } from '../../services/desktop.service';
-import { AppIconService } from './app-icon.service';
 
 @Component({
   selector: 'app-icon',
   templateUrl: './app-icon.component.html',
   styleUrls: ['./app-icon.component.scss'],
-  providers: [
-    {
-      provide: AppIconService,
-    }
-  ]
 })
-export class AppIconComponent<T = any> implements OnInit, OnChanges, AfterViewInit, OnDestroy {
-  @Input() title!: string;
-  @Input() component!: Type<T>;
+export class AppIconComponent<T = any> implements OnInit {
+  @Input() handle!: string;
 
-  @Output() titleChange = new EventEmitter<string>();
-
-  @ViewChild('iconContainer', { static: true }) iconContainer!: ElementRef<HTMLDivElement>;
-
-  mObserver: MutationObserver = new MutationObserver(() => this.onMutation())
-
-  private handle?: symbol;
+  private descriptor?: AppDescriptor<any>;
+  private focused: boolean = false;
 
   constructor(
     private desktopService: DesktopService,
-    private appIconService: AppIconService,
-    private injector: Injector,
-  ) {
-    this.handle = this.desktopService.registerApp(this.injector);
-  }
+    @Optional() private appRegistry: AppRegistryService,
+  ) { }
 
   ngOnInit(): void {
-    this.appIconService.initialize(this.component);
+    this.descriptor = this.appRegistry.getDescriptor(this.handle);
+    this.desktopService.clearIconFocus.subscribe(() => this.focused = false);
   }
 
-  ngOnChanges(changes: CustomChanges<AppIconComponent>): void {
-    if(changes.title) {
-      //DO SOMETHING
+  @HostListener('click', ['$event'])
+  onClick($event: MouseEvent) {
+    if($event.button == 0) {
+      this.desktopService.requestIconFocus();
+      this.focused = true;
     }
-  }
-
-  ngAfterViewInit(): void {
-    this.mObserver.observe(this.iconContainer.nativeElement, {
-      childList: true,
-    })
-  }
-
-  ngOnDestroy(): void {
-    this.mObserver.disconnect();
-  }
-
-  onMutation() {
-    
   }
 
   @HostListener('dblclick')
   onDoubleClick() {
-    if(this.handle)
-      this.desktopService.openWindow(this.handle);
+    this.desktopService.requestIconFocus();
+    this.desktopService.openWindow(this.handle);
+  }
+
+  get icon() {
+    return this.descriptor?.icon || '/assets/no-icon.png';
+  }
+
+  get name() {
+    return this.descriptor?.name || '???????';
+  }
+
+  @HostBinding('class.focused')
+  get isFocused() {
+    return this.focused;
   }
 }

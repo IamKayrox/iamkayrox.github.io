@@ -1,16 +1,15 @@
-import { Component, ComponentRef, ElementRef, EventEmitter, HostBinding, HostListener, Inject, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChange, SimpleChanges, Type, ViewChild } from '@angular/core';
+import { Component, ComponentRef, ElementRef, EventEmitter, HostBinding, HostListener, Inject, Input, OnChanges, OnDestroy, OnInit, Optional, Output, SimpleChange, SimpleChanges, Type, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { ContainerViewDirective } from '../../directives/container-view.directive';
-import { AppDefinition } from '../../models/app-definition.model';
-import { CustomChanges } from '../../models/customChanges.model';
+import { WindowViewContainerDirective } from './window-view-container.directive';
 import { Rect } from '../../models/rect.model';
 import { Sides } from '../../models/sides.enum';
-import { __WINDOW__HANDLE__ } from '../../models/symbols';
+import { __APP_HANDLE__, __WINDOW__HANDLE__ } from '../../models/symbols';
 import { Vector2D } from '../../models/vector2d.model';
 import { DesktopService } from '../../services/desktop.service';
 import { PointerService } from '../../services/pointer.service';
-import { AppIconService } from '../app-icon/app-icon.service';
 import { AppNotDefinedComponent } from '../app-not-defined/app-not-defined.component';
+import { AppRegistryService } from '../../modules/app-registry/app-registry.service';
+import { RectConfig } from '../../modules/app-registry/models/rect-config';
 
 @Component({
   selector: 'app-window',
@@ -18,9 +17,7 @@ import { AppNotDefinedComponent } from '../app-not-defined/app-not-defined.compo
   styleUrls: ['./window.component.scss']
 })
 export class WindowComponent implements OnInit, OnDestroy {
-  @Input('title') title: string = 'Untitled window';
   @Input('name') name?: string;
-  @Input() allowResize = true;
   @Input() initialSize?: Vector2D;
   @Input() initialAsMinimun = false;
   @Input() minimunSize?: Vector2D;
@@ -31,9 +28,13 @@ export class WindowComponent implements OnInit, OnDestroy {
   @Output() minimize = new EventEmitter<void>();
   @Output('window-id') id: string = '##__detached__window__##';
 
-  @ViewChild(ContainerViewDirective, { static: true }) containerView!: ContainerViewDirective;
+  @ViewChild(WindowViewContainerDirective, { static: true }) containerView!: WindowViewContainerDirective;
 
   moving?: boolean;
+
+  title?: string;
+  
+  private allowResize: boolean = true;
 
   private window_rect = new Rect(100, 100, 640, 480);
   private mouse_inside = false;
@@ -64,19 +65,36 @@ export class WindowComponent implements OnInit, OnDestroy {
   constructor(
     private desktopService: DesktopService,
     private pointerService: PointerService,
-    private appIconService: AppIconService,
     @Inject(__WINDOW__HANDLE__) private handle: symbol,
+    @Inject(__APP_HANDLE__) private appHandle: string,
+    @Optional() private appRegistry?: AppRegistryService,
   ) { }
 
   ngOnInit() {
     this.window_rect.w = Math.max(this.initialSize?.w || 640, this.minimunSize?.w || 0);
     this.window_rect.h = Math.max(this.initialSize?.h || 480, this.minimunSize?.h || 0);
-    const component = this.appIconService?.getComponent();
-    if(component) {
-      this.containerView.viewContainerRef.createComponent(component);
+    const descriptor = this.appRegistry?.getDescriptor(this.appHandle);
+    if(descriptor) {
+      this.title = descriptor.name;
+      this.allowResize = typeof(descriptor.allowResize) === 'boolean'? descriptor.allowResize : true;
+      if(descriptor.defaultRect) {
+        this.window_rect.x = this.evalRectConfig(descriptor.defaultRect.x);
+        this.window_rect.y = this.evalRectConfig(descriptor.defaultRect.y);
+        this.window_rect.w = this.evalRectConfig(descriptor.defaultRect.width);
+        this.window_rect.h = this.evalRectConfig(descriptor.defaultRect.height);
+      }
+      this.containerView.viewContainerRef.createComponent(descriptor.component);
     }
     else {
-      this.containerView.viewContainerRef.createComponent(AppNotDefinedComponent)
+      this.title = 'ERROR';
+      this.window_rect = new Rect(
+        this.desktopService.width / 2 - 240,
+        this.desktopService.height / 2 - 125,
+        480,
+        250,
+      )
+      this.allowResize = false;
+      this.containerView.viewContainerRef.createComponent(AppNotDefinedComponent);
     }
   }
 
@@ -101,6 +119,15 @@ export class WindowComponent implements OnInit, OnDestroy {
           this.terminateMoveSubscriptions();
       })
     }
+  }
+
+  private evalRectConfig(config: number | string) {
+    if(typeof(config) == 'number')
+      return config;
+    else
+      return eval(config.replace(/\^/g, '**')
+                    .replace(/\$desktopWidth/g, this.desktopService.width.toString())
+                    .replace(/\$desktopHeight/g, this.desktopService.height.toString()))
   }
 
   private terminateMoveSubscriptions() {

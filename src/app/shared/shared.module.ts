@@ -1,13 +1,13 @@
 import { CommonModule } from "@angular/common";
 import { NgModule } from "@angular/core";
-import { ContainerViewDirective } from "./directives/container-view.directive";
+import { WindowViewContainerDirective } from "./components/window/window-view-container.directive";
 import { DesktopComponent } from "./components/desktop/desktop.component";
 import { WindowComponent } from "./components/window/window.component";
 import { PointerService } from "./services/pointer.service";
-import { IconContainerComponent } from "./components/icon-container/icon-container.component";
 import { AppIconComponent } from "./components/app-icon/app-icon.component";
 import { AppIconViewContainerDirective } from "./components/app-icon/app-icon-view-container.directive";
 import { AppNotDefinedComponent } from "./components/app-not-defined/app-not-defined.component";
+import { DesktopViewContainerDirective } from "./components/desktop/desktop-view-container.directive";
 
 @NgModule({
     imports: [
@@ -16,15 +16,15 @@ import { AppNotDefinedComponent } from "./components/app-not-defined/app-not-def
     declarations: [
         WindowComponent,
         DesktopComponent,
-        ContainerViewDirective,
-        IconContainerComponent,
         AppIconComponent,
-        AppIconViewContainerDirective,
         AppNotDefinedComponent,
+        //Directives
+        AppIconViewContainerDirective,
+        DesktopViewContainerDirective,
+        WindowViewContainerDirective,
     ],
     exports: [
         DesktopComponent,
-        IconContainerComponent,
         AppIconComponent,
     ],
     providers: [

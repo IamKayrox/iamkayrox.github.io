@@ -1,6 +1,6 @@
-<div class="icon-container" #iconContainer>
-  <ng-content select="img, svg, canvas"></ng-content>
-</div>
-<div class="app-name">
-
+<div class="icon-container">
+  <img class="app-icon" [src]="icon">
+  <div class="app-name">
+    {{name}}
+  </div>
 </div>

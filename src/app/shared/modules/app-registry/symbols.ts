@@ -1,0 +1,1 @@
+export const APP_REGISTY = Symbol('__APP__REGISTRY__SYMBOL__');

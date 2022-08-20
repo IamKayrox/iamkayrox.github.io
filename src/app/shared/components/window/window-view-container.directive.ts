@@ -1,9 +1,9 @@
 import { Directive, ViewContainerRef } from '@angular/core';
 
 @Directive({
-  selector: '[appDesktopView], [appWindowView]'
+  selector: '[appWindowViewContainer]'
 })
-export class ContainerViewDirective {
+export class WindowViewContainerDirective {
 
   constructor(
     public viewContainerRef: ViewContainerRef,

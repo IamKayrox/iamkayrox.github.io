@@ -5,6 +5,9 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { SharedModule } from './shared/shared.module';
+import { AppRegistryModule } from './shared/modules/app-registry/app-registry.module';
+import { WipNoticeComponent } from './components/wip-notice/wip-notice.component';
+import { RegistryModule } from './registry.module';
 
 @NgModule({
   declarations: [
@@ -15,6 +18,7 @@ import { SharedModule } from './shared/shared.module';
     AppRoutingModule,
     BrowserAnimationsModule,
     SharedModule,
+    RegistryModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

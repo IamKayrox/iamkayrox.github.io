@@ -1,6 +1,8 @@
-import { ComponentRef, Injectable, Injector, ViewContainerRef } from '@angular/core';
+import { ComponentRef, Injectable, Injector, Optional, ViewContainerRef } from '@angular/core';
+import { Subject } from 'rxjs';
 import { WindowComponent } from '../components/window/window.component';
-import { __WINDOW__HANDLE__ } from '../models/symbols';
+import { __APP_HANDLE__, __WINDOW__HANDLE__ } from '../models/symbols';
+import { AppRegistryService } from '../modules/app-registry/app-registry.service';
 
 @Injectable()
 export class DesktopService {
@@ -8,11 +10,17 @@ export class DesktopService {
   private instances: { [k: symbol]: ComponentRef<WindowComponent> } = { }
 
   private desktopView?: ViewContainerRef;
+  private el?: HTMLElement;
 
-  constructor() { }
+  private _clearIconFocus = new Subject<void>();
 
-  initializeService(desktopView: ViewContainerRef) {
+  constructor(
+    @Optional() private appRegistry?: AppRegistryService,
+  ) { }
+
+  initializeService(desktopView: ViewContainerRef, el: HTMLElement) {
     this.desktopView = desktopView;
+    this.el = el;
   }
 
   registerApp(injector: Injector) {
@@ -25,8 +33,9 @@ export class DesktopService {
     return this.apps[appHandle];
   }
 
-  openWindow(appHandle: symbol) {
-    if(this.desktopView && this.apps[appHandle]) {
+  openWindow(appHandle: string) {
+    if(this.desktopView) {
+      const descriptor = this.appRegistry?.getDescriptor(appHandle);
       const windowHandle = Symbol();
       const instance = this.desktopView.createComponent(WindowComponent, {
         injector: Injector.create({
@@ -34,13 +43,28 @@ export class DesktopService {
             {
               provide: __WINDOW__HANDLE__,
               useValue: windowHandle,
-            }
+            },
+            {
+              provide: __APP_HANDLE__,
+              useValue: descriptor?.handle,
+            },
+            {
+              provide: DesktopService,
+              useValue: this,
+            },
           ],
-          parent: this.apps[appHandle],
         })
       })
       this.instances[windowHandle] = instance;
     }
+  }
+
+  requestIconFocus() {
+    this._clearIconFocus.next();
+  }
+
+  get clearIconFocus() {
+    return this._clearIconFocus.asObservable();
   }
 
   closeWindow(handle: symbol) {
@@ -48,5 +72,13 @@ export class DesktopService {
       this.instances[handle].destroy();
       delete this.instances[handle]
     }
+  }
+
+  get width() {
+    return this.el?.clientWidth || 0;
+  }
+
+  get height() {
+    return this.el?.clientHeight || 0;
   }
 }

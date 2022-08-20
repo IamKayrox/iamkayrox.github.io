@@ -1,39 +1,41 @@
-import { Component, ComponentRef, ElementRef, Injector, OnInit, Type, ViewChild } from '@angular/core';
-import { WindowComponent } from '../window/window.component';
-import { ContainerViewDirective } from '../../directives/container-view.directive';
-import * as uuid from 'uuid';
-import { AppDefinition } from '../../models/app-definition.model';
+import { Component, ElementRef, Injector, Input, OnInit, ViewChild } from '@angular/core';
 import { DesktopService } from '../../services/desktop.service';
-import { Rect } from '../../models/rect.model';
-
+import { PointerService } from '../../services/pointer.service';
+import { DesktopViewContainerDirective } from './desktop-view-container.directive';
 @Component({
   selector: 'app-desktop',
   templateUrl: './desktop.component.html',
   styleUrls: ['./desktop.component.scss'],
-  providers: [ {
-    provide: DesktopService,
-  }]
+  providers: [
+    { provide: DesktopService, },
+    { provide: PointerService, },
+  ]
 })
 export class DesktopComponent implements OnInit {
+  @Input() runOnStart?: string;
 
-  @ViewChild(ContainerViewDirective, { static: true }) desktopView!: ContainerViewDirective;
-
-  private attachedWindows: { [k: string]: ComponentRef<WindowComponent> } = {};
+  @ViewChild(DesktopViewContainerDirective, { static: true }) desktopView!: DesktopViewContainerDirective;
 
   constructor(
     private desktopService: DesktopService,
+    private pointerService: PointerService,
     private elRef: ElementRef<HTMLElement>,
-  ) {
-  }
+  ) { }
 
   ngOnInit() {
-    this.desktopService.initializeService(this.desktopView.viewContainerRef);
+    this.desktopService.initializeService(this.desktopView.viewContainerRef, this.elRef.nativeElement);
+    this.pointerService.initializeService(this.elRef.nativeElement);
+    if(this.runOnStart) {
+      const apps = this.runOnStart.split(',');
+      for(let app of apps) {
+        this.desktopService.openWindow(app);
+      }
+    }
   }
 
-  closeWindow(appID: string) {
-    if(this.attachedWindows[appID]) {
-      this.attachedWindows[appID].destroy();
-      delete this.attachedWindows[appID];
+  clearIconFocus($event: MouseEvent) {
+    if($event.button == 0) {
+      this.desktopService.requestIconFocus();
     }
   }
 
