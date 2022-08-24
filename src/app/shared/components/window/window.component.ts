@@ -1,4 +1,4 @@
-import { Component, ComponentRef, ElementRef, EventEmitter, HostBinding, HostListener, Inject, Input, OnChanges, OnDestroy, OnInit, Optional, Output, SimpleChange, SimpleChanges, Type, ViewChild } from '@angular/core';
+import { Component, ComponentRef, EventEmitter, HostBinding, HostListener, Inject, Injector, Input, OnDestroy, OnInit, Optional, Output, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { WindowViewContainerDirective } from './window-view-container.directive';
 import { Rect } from '../../models/rect.model';
@@ -9,12 +9,12 @@ import { DesktopService } from '../../services/desktop.service';
 import { PointerService } from '../../services/pointer.service';
 import { AppNotDefinedComponent } from '../app-not-defined/app-not-defined.component';
 import { AppRegistryService } from '../../modules/app-registry/app-registry.service';
-import { RectConfig } from '../../modules/app-registry/models/rect-config';
+import { boolOrDefault } from '../../utils/bool-or-default';
 
 @Component({
   selector: 'app-window',
   templateUrl: './window.component.html',
-  styleUrls: ['./window.component.scss']
+  styleUrls: ['./window.component.scss'],
 })
 export class WindowComponent implements OnInit, OnDestroy {
   @Input('name') name?: string;
@@ -23,6 +23,7 @@ export class WindowComponent implements OnInit, OnDestroy {
   @Input() minimunSize?: Vector2D;
   @Input() canClose = true;
   @Input() canMinimize = true;
+  @Input() icon?: string;
 
   @Output() close = new EventEmitter<void>();
   @Output() minimize = new EventEmitter<void>();
@@ -65,6 +66,7 @@ export class WindowComponent implements OnInit, OnDestroy {
   constructor(
     private desktopService: DesktopService,
     private pointerService: PointerService,
+    private injector: Injector,
     @Inject(__WINDOW__HANDLE__) private handle: symbol,
     @Inject(__APP_HANDLE__) private appHandle: string,
     @Optional() private appRegistry?: AppRegistryService,
@@ -76,14 +78,22 @@ export class WindowComponent implements OnInit, OnDestroy {
     const descriptor = this.appRegistry?.getDescriptor(this.appHandle);
     if(descriptor) {
       this.title = descriptor.name;
-      this.allowResize = typeof(descriptor.allowResize) === 'boolean'? descriptor.allowResize : true;
+      this.allowResize = boolOrDefault(descriptor.allowResize);
+      this.canClose = boolOrDefault(descriptor.actionsButtons?.close);
+      this.canMinimize = boolOrDefault(descriptor.actionsButtons?.minize);
+      this.icon = descriptor.icon;
       if(descriptor.defaultRect) {
         this.window_rect.x = this.evalRectConfig(descriptor.defaultRect.x);
         this.window_rect.y = this.evalRectConfig(descriptor.defaultRect.y);
         this.window_rect.w = this.evalRectConfig(descriptor.defaultRect.width);
         this.window_rect.h = this.evalRectConfig(descriptor.defaultRect.height);
       }
-      this.containerView.viewContainerRef.createComponent(descriptor.component);
+      this.containerView.viewContainerRef.createComponent(descriptor.component, {
+        injector: Injector.create({
+          providers: [],
+          parent: this.injector,
+        })
+      });
     }
     else {
       this.title = 'ERROR';
@@ -175,6 +185,7 @@ export class WindowComponent implements OnInit, OnDestroy {
   }
 
   private doResize(movement: Vector2D) {
+    this.minimunSize = this.appRegistry?.getDescriptor(this.appHandle)?.minimumSize;
     if(this.resizing & Sides.top) {
       this.window_rect.y += movement.y;
       this.window_rect.h -= movement.y;
@@ -256,5 +267,9 @@ export class WindowComponent implements OnInit, OnDestroy {
     }
     this.resizable = 0;
     return 'inherit';
+  }
+
+  getAppHandle() {
+    return this.appHandle;
   }
 }

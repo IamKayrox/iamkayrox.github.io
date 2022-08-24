@@ -7,8 +7,8 @@ import { DesktopViewContainerDirective } from './desktop-view-container.directiv
   templateUrl: './desktop.component.html',
   styleUrls: ['./desktop.component.scss'],
   providers: [
-    { provide: DesktopService, },
-    { provide: PointerService, },
+    DesktopService,
+    PointerService,
   ]
 })
 export class DesktopComponent implements OnInit {
@@ -19,11 +19,12 @@ export class DesktopComponent implements OnInit {
   constructor(
     private desktopService: DesktopService,
     private pointerService: PointerService,
+    private injector: Injector,
     private elRef: ElementRef<HTMLElement>,
   ) { }
 
   ngOnInit() {
-    this.desktopService.initializeService(this.desktopView.viewContainerRef, this.elRef.nativeElement);
+    this.desktopService.initializeService(this.desktopView.viewContainerRef, this.elRef.nativeElement, this.injector);
     this.pointerService.initializeService(this.elRef.nativeElement);
     if(this.runOnStart) {
       const apps = this.runOnStart.split(',');

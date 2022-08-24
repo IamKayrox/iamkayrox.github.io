@@ -12,11 +12,9 @@
 }
 
 @keyframes flashWindow {
-    0% {
-        filter: saturate(100%);
-    }
     50% {
-        filter: saturate(200%);
+        background-color: #5c050c;
+        color: white;
     }
 }
 
@@ -28,7 +26,7 @@
     background-color: #eeccff;
     border-bottom: 3px solid #ccc;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     box-sizing: border-box;
     cursor: grab;
     user-select: none;
@@ -39,8 +37,6 @@
         cursor: grabbing;
     }
     .button-container {
-        position: absolute;
-        left: 12px;
         display: flex;
         cursor: default;
         .window-button {
@@ -60,6 +56,20 @@
     }
     .title-container {
         pointer-events: none;
+    }
+    .icon-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 8px;
+        width: 20px;
+        height: 20px;
+        img {
+            max-width: 20px;
+            max-height: 20px;
+            width: auto;
+            height: auto;
+        }
     }
 }
 

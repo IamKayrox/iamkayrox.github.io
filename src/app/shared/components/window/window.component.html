@@ -1,12 +1,14 @@
 <div class="window-top-bar" (mousedown)="onMouseDown($event)" [ngClass]="{ 'moving-window': moving, 'flash': flash }">
-    <div class="button-container">
-        <div class="window-button close" *ngIf="canClose" (click)="doClose()" (mousedown)="$event.stopPropagation()"></div>
-        <div class="window-button minimise" *ngIf="canMinimize" (mousedown)="$event.stopPropagation()"></div>
+    <div class="icon-container">
+        <img *ngIf="icon" [src]="icon">
     </div>
     <div class="title-container">
         {{title || 'Untitled window'}}
     </div>
-    <div class="dummy-thicc"></div>
+    <div class="button-container">
+        <div class="window-button minimise" *ngIf="canMinimize" (mousedown)="$event.stopPropagation()"></div>
+        <div class="window-button close" *ngIf="canClose" (click)="doClose()" (mousedown)="$event.stopPropagation()"></div>
+    </div>
 </div>
 <div class="window-content">
     <ng-template appWindowViewContainer></ng-template>

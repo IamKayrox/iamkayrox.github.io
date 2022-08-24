@@ -12,4 +12,8 @@ export class AppRegistryService {
   getDescriptor(handle: string) {
     return this.apps.find(app => app.handle == handle);
   }
+
+  get appList() {
+    return [...this.apps];
+  }
 }
