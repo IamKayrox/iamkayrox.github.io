@@ -1,3 +1,14 @@
 :host {
+  position: absolute;
   display: block;
+}
+
+.title-bar {
+  background-color: aquamarine;
+  padding: 4px;
+  cursor: grab;
+
+  &.grabbed {
+    cursor: grabbing;
+  }
 }

@@ -1,11 +1,29 @@
-<div class="title-bar">
+<div
+  class="title-bar"
+  [appBlockEvents]="['mousemove', 'mousedown']"
+  [enabled]="grabbed()"
+  (mousedown)="grabbed.set(true)"
+  (mousemove)="onMouseMove($event)"
+  (mouseup)="grabbed.set(false)"
+  (mouseleave)="grabbed.set(false)"
+  [ngClass]="{ grabbed: grabbed() }"
+>
   <div class="identity">
     <div class="icon"></div>
-    <div class="name"></div>
+    <div class="name">
+      {{action.title}}
+    </div>
   </div>
   <div class="controls">
   </div>
 </div>
 <div class="content" #content>
-
+  @switch (action.type) {
+    @case (ActionType.Component) {
+      <ng-container *ngComponentOutlet="action.component"></ng-container>
+    }
+    @case (ActionType.Web) {
+      <iframe [src]="action.url" frameborder="0"></iframe>
+    }
+  }
 </div>

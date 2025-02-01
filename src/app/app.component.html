@@ -1,0 +1,3 @@
+@for (injector of windows(); track $index) {
+  <ng-container *ngComponentOutlet="WindowsComponent; injector: injector"></ng-container>
+}

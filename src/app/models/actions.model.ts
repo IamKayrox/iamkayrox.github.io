@@ -1,20 +1,24 @@
 import { Type } from "@angular/core";
+import { ReadonlyVector2D } from "./vector-2d.model";
 
 export enum ActionType {
   Web = "web-action",
   Component = "component-action",
 }
 
-export interface WebAction {
-  type: ActionType.Web;
-  url: string;
-  title?: string;
+export interface BaseAction {
+  title: string;
+  defaultWindowSize: ReadonlyVector2D;
 }
 
-export interface ComponentAction {
+export interface WebAction extends BaseAction {
+  type: ActionType.Web;
+  url: string;
+}
+
+export interface ComponentAction extends BaseAction {
   type: ActionType.Component;
   component: Type<unknown>;
-  injectionParams?: unknown;
 }
 
 export type Action = WebAction | ComponentAction;
